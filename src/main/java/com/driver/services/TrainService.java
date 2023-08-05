@@ -123,7 +123,7 @@ public class TrainService {
                 departureTime.plusHours(1);
             }
 
-            if(departureTime.equals(startTime) || departureTime.equals(endTime) || (departureTime.isAfter(startTime) && departureTime.isBefore(endTime)))
+            if(departureTime.toString().equalsIgnoreCase(startTime.toString()) || departureTime.toString().equalsIgnoreCase(endTime.toString()) || (departureTime.isAfter(startTime) && departureTime.isBefore(endTime)))
                 availableTrains.add(train.getTrainId());
         }
 
