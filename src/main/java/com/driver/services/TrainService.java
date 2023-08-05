@@ -26,7 +26,23 @@ public class TrainService {
         //and route String logic to be taken from the Problem statement.
         //Save the train and return the trainId that is generated from the database.
         //Avoid using the lombok library
-        return null;
+        Train train = new Train();
+        String route = "";
+        List<Station> stations = trainEntryDto.getStationRoute();
+        for(int i = 0 ; i<stations.size(); i++){
+            if(i == 0)
+                route += stations.get(i);
+            else {
+                route += "," + stations.get(i);
+            }
+        }
+        train.setDepartureTime(trainEntryDto.getDepartureTime());
+        train.setNoOfSeats(trainEntryDto.getNoOfSeats());
+        train.setRoute(route);
+
+        Train savedTrain = trainRepository.save(train);
+
+        return savedTrain.getTrainId();
     }
 
     public Integer calculateAvailableSeats(SeatAvailabilityEntryDto seatAvailabilityEntryDto){
@@ -49,9 +65,24 @@ public class TrainService {
         //if the trainId is not passing through that station
         //throw new Exception("Train is not passing from this station");
         //  in a happy case we need to find out the number of such people.
+        Train train = trainRepository.findById(trainId).get();
+        String[] stations = train.getRoute().split(",");
+        boolean stationPresent = false;
+        for(int i=0 ; i<stations.length ; i++){
+            if(station.toString().equalsIgnoreCase(stations[i]))
+                stationPresent = true;
+        }
+        if(!stationPresent)
+            throw new Exception("Train is not passing from this station");
 
+        List<Ticket> tickets = train.getBookedTickets();
+        int noOfPeople = 0;
+        for(Ticket ticket : tickets){
+            if(ticket.getFromStation().toString().equalsIgnoreCase(station.toString()))
+                noOfPeople += ticket.getPassengersList().size();
+        }
 
-        return 0;
+        return noOfPeople;
     }
 
     public Integer calculateOldestPersonTravelling(Integer trainId){
@@ -60,7 +91,18 @@ public class TrainService {
         //We need to find out the age of the oldest person that is travelling the train
         //If there are no people travelling in that train you can return 0
 
-        return 0;
+        Train train = trainRepository.findById(trainId).get();
+        List<Ticket> tickets = train.getBookedTickets();
+        Integer oldestPersonAge = 0;
+        for(Ticket ticket : tickets){
+            List<Passenger> passengers = ticket.getPassengersList();
+            for(Passenger passenger : passengers){
+                if(passenger.getAge() > oldestPersonAge)
+                    oldestPersonAge = passenger.getAge();
+            }
+        }
+
+        return oldestPersonAge;
     }
 
     public List<Integer> trainsBetweenAGivenTime(Station station, LocalTime startTime, LocalTime endTime){
@@ -70,8 +112,22 @@ public class TrainService {
         //You can assume that the date change doesn't need to be done ie the travel will certainly happen with the same date (More details
         //in problem statement)
         //You can also assume the seconds and milli seconds value will be 0 in a LocalTime format.
+        List<Integer> availableTrains = new ArrayList<>();
+        List<Train> trains = trainRepository.findAll();
+        for(Train train : trains){
+            String[] stations = train.getRoute().split(",");
+            LocalTime departureTime = train.getDepartureTime();
+            int i = 0;
+            while(!(station.toString().equalsIgnoreCase(stations[i]))){
+                i++;
+                departureTime.plusHours(1);
+            }
 
-        return null;
+            if(departureTime.isAfter(startTime) && departureTime.isBefore(endTime))
+                availableTrains.add(train.getTrainId());
+        }
+
+        return availableTrains;
     }
 
 }
